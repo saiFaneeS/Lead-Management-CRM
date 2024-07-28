@@ -101,6 +101,10 @@ const createOrUpdateUserNotificationPreferences = asyncHandler(
   async (req, res) => {
     const { email, inApp } = req.body;
 
+    if (!email && !inApp) {
+      throw new ApiError(400, "Atleast one preference is required.");
+    }
+
     try {
       const existingPreferences = await NotificationPreferences.findOne({
         user: req.user._id,

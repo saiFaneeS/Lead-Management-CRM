@@ -7,7 +7,6 @@ import {
   updateLeadDetails,
 } from "../controllers/lead.controller.js";
 import verifyJWT from "../middlewares/auth.middleware.js";
-import sendNotificationEmail from "../utils/sendEmailNotification.js";
 
 const router = Router();
 

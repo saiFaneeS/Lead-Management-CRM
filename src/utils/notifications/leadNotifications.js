@@ -19,11 +19,3 @@ export const notifyLeadStatusChanged = async (
 
   await sendNotifications(assignedTo, subject, message, notificationType);
 };
-
-export const notifyLeadReassigned = async (assignedTo, leadName) => {
-  const subject = "Lead Reassigned";
-  const message = `You have been reassigned the lead: ${leadName}`;
-  const notificationType = "lead_reassigned";
-
-  await sendNotifications(assignedTo, subject, message, notificationType);
-};

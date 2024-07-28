@@ -29,6 +29,6 @@ router.route("/refresh-token").post(refreshAccessToken);
 router.route("/change-password").patch(verifyJWT, changeCurrentPassword);
 router.route("/update-user").patch(verifyJWT, updateAccountDetails);
 router.route("/update-avatar").patch(verifyJWT, updateUserAvatar);
-router.route("/delete-user").delete(verifyJWT, deleteUserById);
+router.route("/delete-user/:id").delete(verifyJWT, deleteUserById);
 
 export default router;

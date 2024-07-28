@@ -3,6 +3,8 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import sendEmailNotification from "../utils/sendEmailNotification.js";
+import { Notification } from "../models/notification.model.js";
 
 const options = {
   httpOnly: true,
@@ -58,6 +60,22 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering user.");
+  }
+
+  if (createdUser) {
+    // send notification
+    await sendEmailNotification(
+      createdUser._id,
+      "Agent Registration",
+      `You have been registered as an Agent in Modern Standards CRM as ${fullName}`
+    );
+
+    // in-app notification
+    await Notification.create({
+      user: createdUser._id,
+      message: `Hi ${fullName}, Welcome to Modern Standards team CRM!`,
+      type: "other",
+    });
   }
 
   return res

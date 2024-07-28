@@ -14,26 +14,18 @@ const registerLead = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Either email or phone is required.");
   }
 
-  try {
-    const lead = await Lead.create({
-      name,
-      email,
-      phone,
-      assignedTo,
-    });
+  const lead = await Lead.create({
+    name,
+    email,
+    phone,
+    assignedTo,
+  });
 
-    notifyLeadAssigned(assignedTo, name);
+  await notifyLeadAssigned(assignedTo, name);
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, lead, "Lead registered Successfully."));
-  } catch (error) {
-    throw new ApiError(
-      500,
-      "Something went wrong while registering Lead.",
-      error
-    );
-  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, lead, "Lead registered Successfully."));
 });
 
 const getAllLeads = asyncHandler(async (req, res) => {
@@ -62,46 +54,47 @@ const updateLeadDetails = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { name, email, phone, status, assignedTo } = req.body;
 
-  try {
-    const lead = await Lead.findById(id);
-    if (!lead) {
-      throw new ApiError(404, "Lead not found.");
-    }
+  const lead = await Lead.findById(id);
 
-    // Check if the status has changed
-    const statusChanged = lead.status !== status;
-
-    const updatedLead = await Lead.findByIdAndUpdate(
-      id,
-      {
-        $set: {
-          name,
-          email,
-          phone,
-          status,
-          assignedTo,
-        },
-      },
-      { new: true }
-    );
-
-    if (!updatedLead) {
-      throw new ApiError(404, "Lead not found.");
-    }
-
-    // If the status has changed, notify the assigned user
-    // if (statusChanged) {
-    //   await notifyLeadStatusChanged(assignedTo, name, status);
-    // }
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, updatedLead, "Lead details updated successfully.")
-      );
-  } catch (error) {
-    throw new ApiError(500, "Something went wrong while updating lead.", error);
+  if (!lead) {
+    throw new ApiError(404, "Lead not found.");
   }
+
+  const statusChanged = lead.status !== status;
+
+  const updatedLead = await Lead.findByIdAndUpdate(
+    id,
+    {
+      $set: {
+        name,
+        email,
+        phone,
+        status,
+        assignedTo,
+      },
+    },
+    { new: true }
+  );
+
+  if (!updatedLead) {
+    throw new ApiError(404, "Lead not found.");
+  }
+
+  console.log(lead.status, status);
+
+  if (statusChanged) {
+    await notifyLeadStatusChanged(
+      updatedLead.assignedTo,
+      updatedLead.name,
+      updatedLead.status
+    );
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedLead, "Lead details updated successfully.")
+    );
 });
 
 const deleteLeadById = asyncHandler(async (req, res) => {
