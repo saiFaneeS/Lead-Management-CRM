@@ -21,12 +21,8 @@ const taskSchema = new Schema(
     },
     priority: {
       type: String,
-      enum: [
-        "ui",
-        "ni",
-        "un",
-        "nn",
-      ],
+      enum: ["ui", "ni", "un", "nn"],
+      // enum: ["urgent_and_important", "not_urgent_but_important", "urgent_but_not_important", "not_urgent_and_not_important"],
       required: true,
     },
     status: {

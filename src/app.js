@@ -18,6 +18,7 @@ import pipelineStageRouter from "./routes/pipelineStage.routes.js";
 import noteRouter from "./routes/note.routes.js";
 import taskRouter from "./routes/task.routes.js";
 import notificationRouter from "./routes/notification.routes.js";
+import reportsRouter from "./routes/report.routes.js";
 
 // routes
 app.use("/api/v1/users", userRouter);
@@ -27,5 +28,6 @@ app.use("/api/v1/pipeline-stages", pipelineStageRouter);
 app.use("/api/v1/notes", noteRouter);
 app.use("/api/v1/tasks", taskRouter);
 app.use("/api/v1/notifications", notificationRouter);
+app.use("/api/v1/reports", reportsRouter);
 
 export { app };
