@@ -30,4 +30,6 @@ app.use("/api/v1/tasks", taskRouter);
 app.use("/api/v1/notifications", notificationRouter);
 app.use("/api/v1/reports", reportsRouter);
 
+app.get("/", (req, res) => res.send("Express on Vercel"));
+
 export { app };
