@@ -13,7 +13,7 @@
       }
     ],
      "env": {
-        "PORT":8000,
+        "PORT":"8000",
         "MONGODB_URI":"mongodb+srv://saifanees:thimsa204@cluster0.y52kvyy.mongodb.net",
         "ORIGIN":"*",
         "ACCESS_TOKEN_SECRET":"th!m$@204",
