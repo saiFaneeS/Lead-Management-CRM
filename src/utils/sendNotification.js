@@ -12,17 +12,21 @@ export const sendNotifications = async (
     user: userId,
   });
 
-  const { email: emailPref, inApp: inAppPref } = userPreferences.preferences;
+  if (userPreferences) {
+    const { email, inApp } = userPreferences.preferences;
 
-  if (emailPref) {
-    await sendEmailNotification(userId, subject, message);
-  }
+    if (email) {
+      await sendEmailNotification(userId, subject, message);
+    }
 
-  if (inAppPref) {
-    await Notification.create({
-      user: userId,
-      message,
-      type: notificationType,
-    });
+    if (inApp) {
+      await Notification.create({
+        user: userId,
+        message,
+        type: notificationType,
+      });
+    }
+  } else {
+    console.warn(`No notification preferences found for user: ${userId}`);
   }
 };

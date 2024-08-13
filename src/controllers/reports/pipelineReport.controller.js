@@ -50,4 +50,88 @@ const getPipelineLeadAging = asyncHandler(async (req, res) => {
   }
 });
 
-export { getPipelineLeadAging };
+// 2. Pipeline Conversion Rate Report
+const getPipelineConversionRate = asyncHandler(async (req, res) => {
+  try {
+    const pipelineConversionRate = await Lead.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          totalLeads: { $sum: 1 },
+          convertedLeads: {
+            $sum: {
+              $cond: [
+                { $in: ["$status", ["completed_won", "closed_won"]] },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          conversionRate: {
+            $multiply: [{ $divide: ["$convertedLeads", "$totalLeads"] }, 100],
+          },
+        },
+      },
+    ]);
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          pipelineConversionRate,
+          "Pipeline conversion rate report generated successfully."
+        )
+      );
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Error generating pipeline conversion rate report",
+      error
+    );
+  }
+});
+
+// 3. Leads per Pipeline Report
+const getLeadsPerPipeline = asyncHandler(async (req, res) => {
+  try {
+    const leadsPerPipeline = await Lead.aggregate([
+      {
+        $lookup: {
+          from: "pipelines",
+          localField: "pipeline",
+          foreignField: "_id",
+          as: "pipeline",
+        },
+      },
+      {
+        $group: {
+          _id: "$pipeline.pipelineName",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          leadsPerPipeline,
+          "Leads per pipeline report generated successfully."
+        )
+      );
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Error generating leads per pipeline report",
+      error
+    );
+  }
+});
+
+export { getPipelineLeadAging, getPipelineConversionRate, getLeadsPerPipeline };

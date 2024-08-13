@@ -27,7 +27,7 @@ const userSchema = new Schema(
     role: {
       type: Schema.Types.ObjectId,
       ref: "Role",
-      default: "User",
+      required: false,
     },
     avatar: {
       type: String,
@@ -58,7 +58,7 @@ userSchema.methods.generateAccessToken = function () {
     {
       _id: this._id,
       email: this.email,
-      username: this.username,
+      phone: this.phone,
       fullName: this.fullName,
     },
     process.env.ACCESS_TOKEN_SECRET,

@@ -9,10 +9,12 @@ const pipelineStageSchema = new Schema({
     type: Number,
     required: true,
   },
-  color: {
-    type: String,
-    default: "#FFFFFF",
-  },
+  leads: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Lead",
+    },
+  ],
   pipeline: {
     type: Schema.Types.ObjectId,
     ref: "Pipeline",

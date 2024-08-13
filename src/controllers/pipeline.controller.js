@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Pipeline } from "../models/pipeline.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -29,8 +30,42 @@ const createPipeline = asyncHandler(async (req, res) => {
 });
 
 const getAllPipelines = asyncHandler(async (req, res) => {
-  const pipelines = await Pipeline.find();
-  //   const pipelines = await Pipeline.find().populate("stages");
+  const pipelines = await Pipeline.aggregate([
+    {
+      $lookup: {
+        from: "pipelinestages",
+        localField: "_id",
+        foreignField: "pipeline",
+        as: "stages",
+      },
+    },
+    {
+      $unwind: {
+        path: "$stages",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "leads",
+        localField: "stages.leads",
+        foreignField: "_id",
+        as: "stages.leads",
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        pipelineName: { $first: "$pipelineName" },
+        color: { $first: "$color" },
+        stages: { $push: "$stages" },
+        createdAt: { $first: "$createdAt" },
+        updatedAt: { $first: "$updatedAt" },
+      },
+    },
+  ]);
+
+  // console.log(JSON.stringify(pipelines, null, 2));
 
   return res
     .status(200)
@@ -40,16 +75,72 @@ const getAllPipelines = asyncHandler(async (req, res) => {
 const getPipelineById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const pipeline = await Pipeline.findById(id);
-  //   const pipeline = await Pipeline.findById(id).populate("stages");
+  // Validate the provided ID
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, "Invalid pipeline ID.");
+  }
+
+  const pipeline = await Pipeline.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(id),
+      },
+    },
+    {
+      $lookup: {
+        from: "pipelinestages",
+        localField: "_id",
+        foreignField: "pipeline",
+        as: "stages",
+      },
+    },
+    {
+      $unwind: {
+        path: "$stages",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+       {
+      $lookup: {
+        from: "leads",
+        localField: "stages.leads",
+        foreignField: "_id",
+        as: "stages.leads",
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        pipelineName: { $first: "$pipelineName" },
+        color: { $first: "$color" },
+        stages: { $push: "$stages" },
+        createdAt: { $first: "$createdAt" },
+        updatedAt: { $first: "$updatedAt" },
+      },
+    },
+    // {
+    //   $project: {
+    //     _id: 1,
+    //     pipelineName: 1,
+    //     color: 1,
+    //     stages: 1,
+    //     createdAt: 1,
+    //     updatedAt: 1,
+    //   },
+    // },
+  ]);
 
   if (!pipeline) {
-    throw new ApiError(404, "No pipeline found.");
+    throw new ApiError(404, "No pipeline found with the provided ID.");
   }
+
+  const pipelineData = pipeline[0];
+
+  // console.log(JSON.stringify(pipelineData, null, 2));
 
   return res
     .status(200)
-    .json(new ApiResponse(200, pipeline, "Pipeline fetched Successfully."));
+    .json(new ApiResponse(200, pipelineData, "Pipeline fetched successfully."));
 });
 
 const updatePipelineDetails = asyncHandler(async (req, res) => {

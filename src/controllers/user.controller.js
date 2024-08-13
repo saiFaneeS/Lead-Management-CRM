@@ -7,8 +7,9 @@ import sendEmailNotification from "../utils/sendEmailNotification.js";
 import { Notification } from "../models/notification.model.js";
 
 const options = {
-  httpOnly: true,
-  secure: true,
+  // httpOnly: true,
+  // secure: true,
+  // sameSite: "none",
 };
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -30,7 +31,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { fullName, email, password, role } = req.body;
+  const { fullName, email, password, phone, role } = req.body;
 
   if (!fullName || !email || !password) {
     throw new ApiError(400, "All fields are required.");
@@ -50,6 +51,7 @@ const registerUser = asyncHandler(async (req, res) => {
     fullName,
     email,
     password,
+    phone,
     role,
     avatar: avatar?.url || "",
   });
@@ -237,12 +239,9 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User password changed successfully"));
 });
 
+// personal account
 const updateAccountDetails = asyncHandler(async (req, res) => {
   const { fullName, email, phone } = req.body;
-
-  if (!fullName || !email || !phone) {
-    throw new ApiError(400, "All fields are required");
-  }
 
   const updatedUser = await User.findByIdAndUpdate(
     req.user._id,
@@ -256,10 +255,58 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     { new: true }
   ).select("-password -refreshToken");
 
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    req.user._id
+  );
+
   return res
     .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
     .json(
-      new ApiResponse(200, updatedUser, "User details updated Successfully")
+      new ApiResponse(
+        200,
+        { updatedUser, accessToken, refreshToken },
+        "User details updated Successfully"
+      )
+    );
+});
+
+// other accounts
+const updateUserDetails = asyncHandler(async (req, res) => {
+  const { fullName, email, phone } = req.body;
+  const userId = req.params.id;
+  console.log(userId);
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        fullName,
+        email,
+        phone,
+      },
+    },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  if (!updatedUser) {
+    throw new ApiError(404, "No user found with this Id.");
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    req.user._id
+  );
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        { updatedUser, accessToken, refreshToken },
+        "User details updated Successfully"
+      )
     );
 });
 
@@ -313,4 +360,5 @@ export {
   updateAccountDetails,
   updateUserAvatar,
   deleteUserById,
+  updateUserDetails,
 };

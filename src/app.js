@@ -4,7 +4,7 @@ import cors from "cors";
 
 const app = express();
 
-app.use(cors({ origin: process.env.ORIGIN, credentials: true }));
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
@@ -30,6 +30,6 @@ app.use("/api/v1/tasks", taskRouter);
 app.use("/api/v1/notifications", notificationRouter);
 app.use("/api/v1/reports", reportsRouter);
 
-app.get("/", (req, res) => res.send("Express on Vercel"));
+app.get("/", (req, res) => res.send("API - LMS"));
 
 export { app };
