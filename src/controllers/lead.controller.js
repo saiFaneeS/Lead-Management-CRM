@@ -29,7 +29,7 @@ const registerLead = asyncHandler(async (req, res) => {
 });
 
 const getAllLeads = asyncHandler(async (req, res) => {
-  const leads = await Lead.find();
+  const leads = await Lead.find().populate("assignedTo");
 
   return res
     .status(200)

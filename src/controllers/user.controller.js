@@ -274,7 +274,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
 // other accounts
 const updateUserDetails = asyncHandler(async (req, res) => {
-  const { fullName, email, phone } = req.body;
+  const { fullName, email, phone, role } = req.body;
   const userId = req.params.id;
   console.log(userId);
   const updatedUser = await User.findByIdAndUpdate(
@@ -284,6 +284,7 @@ const updateUserDetails = asyncHandler(async (req, res) => {
         fullName,
         email,
         phone,
+        role,
       },
     },
     { new: true }

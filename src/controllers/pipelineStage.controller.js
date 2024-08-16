@@ -77,6 +77,28 @@ const updatePipelineStage = asyncHandler(async (req, res) => {
     );
 });
 
+const updatePipelineStageOrder = asyncHandler(async (req, res) => {
+  const { stages } = req.body; // Array of stages with updated orders
+
+  if (!stages || !Array.isArray(stages)) {
+    throw new ApiError(400, "Invalid stages array.");
+  }
+
+  const bulkOps = stages.map((stage) => ({
+    updateOne: {
+      filter: { _id: stage._id },
+      update: { stageOrder: stage.stageOrder },
+    },
+  }));
+
+  // Execute all update operations in bulk
+  await PipelineStage.bulkWrite(bulkOps);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Pipeline stages reordered successfully."));
+});
+
 const deletePipelineStage = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -150,6 +172,112 @@ const addLeadToPipelineStage = asyncHandler(async (req, res) => {
     );
 });
 
+const removeLeadFromStage = async (req, res) => {
+  const { pipelineStageId, leadId } = req.body;
+
+  try {
+    // Find the stage by ID
+    const stage = await PipelineStage.findById(pipelineStageId);
+    if (!stage) {
+      return res.status(404).json({ error: "Pipeline stage not found" });
+    }
+
+    // Remove the lead from the leads array
+    stage.leads = stage.leads.filter((lead) => lead.toString() !== leadId);
+
+    // Save the updated stage
+    await stage.save();
+
+    return res
+      .status(200)
+      .json({ message: "Lead removed from stage successfully" });
+  } catch (error) {
+    console.error("Error removing lead from stage:", error);
+    return res.status(500).json({ error: "Failed to remove lead from stage" });
+  }
+};
+
+const deleteLeadCompletely = async (req, res) => {
+  const { leadId } = req.params;
+
+  try {
+    // Delete the lead from all pipeline stages
+    await PipelineStage.updateMany(
+      { leads: leadId },
+      { $pull: { leads: leadId } }
+    );
+
+    // Delete the lead from the database
+    await Lead.findByIdAndDelete(leadId);
+
+    return res.status(200).json({ message: "Lead deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting lead:", error);
+    return res.status(500).json({ error: "Failed to delete lead" });
+  }
+};
+
+const moveLead = asyncHandler(async (req, res) => {
+  const { leadId, sourceStageId, destinationStageId, destinationIndex } =
+    req.body;
+
+  if (!leadId || !sourceStageId || !destinationStageId) {
+    throw new ApiError(
+      400,
+      "Lead ID, source stage ID, and destination stage ID are required."
+    );
+  }
+
+  // Start a session for the transaction
+  const session = await PipelineStage.startSession();
+  session.startTransaction();
+
+  try {
+    // Remove the lead from the source stage
+    const sourceStage = await PipelineStage.findByIdAndUpdate(
+      sourceStageId,
+      { $pull: { leads: leadId } },
+      { session, new: true }
+    );
+
+    if (!sourceStage) {
+      throw new ApiError(404, "Source stage not found.");
+    }
+
+    // Add the lead to the destination stage at the specified index
+    const destinationStage = await PipelineStage.findById(
+      destinationStageId
+    ).session(session);
+
+    if (!destinationStage) {
+      throw new ApiError(404, "Destination stage not found.");
+    }
+
+    destinationStage.leads.splice(destinationIndex, 0, leadId);
+    await destinationStage.save({ session });
+
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          sourceStage,
+          destinationStage,
+        },
+        "Lead moved successfully."
+      )
+    );
+  } catch (error) {
+    // If an error occurred, abort the transaction
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+});
+
 export {
   createPipelineStage,
   getAllPipelineStages,
@@ -157,4 +285,8 @@ export {
   updatePipelineStage,
   deletePipelineStage,
   addLeadToPipelineStage,
+  removeLeadFromStage,
+  deleteLeadCompletely,
+  updatePipelineStageOrder,
+  moveLead,
 };

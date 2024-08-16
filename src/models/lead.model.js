@@ -1,13 +1,13 @@
 import mongoose, { Schema } from "mongoose";
 
 const leadStatuses = [
-  "new",
-  "contacted",
-  "qualified",
-  "proposal_sent",
-  "negotiation",
-  "closed_won",
-  "closed_lost",
+  "New",
+  "Contacted",
+  "Qualified",
+  "Proposal Sent",
+  "Negotiation",
+  "Lost",
+  "Won",
 ];
 
 const leadSchema = new Schema(
@@ -24,7 +24,7 @@ const leadSchema = new Schema(
     },
     status: {
       type: String,
-      default: "new",
+      default: "New",
       enum: leadStatuses,
     },
     assignedTo: {
