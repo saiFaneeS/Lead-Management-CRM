@@ -6,18 +6,18 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const createPipelineStage = asyncHandler(async (req, res) => {
-  const { stageName, stageOrder, pipelineId } = req.body;
+  const { id } = req.params;
+  const { stageName } = req.body;
 
-  console.log("New Stage data: ", stageName, stageOrder, pipelineId);
+  // console.log("New Stage data: ", stageName, req.params);
 
-  if (!stageName || !pipelineId) {
+  if (!stageName || !id) {
     throw new ApiError(400, "Stage name or Pipeline Id is missing.");
   }
 
   const pipelineStage = await PipelineStage.create({
     stageName,
-    stageOrder,
-    pipeline: pipelineId,
+    pipeline: id,
   });
 
   return res
@@ -31,8 +31,15 @@ const createPipelineStage = asyncHandler(async (req, res) => {
     );
 });
 
-const getAllPipelineStages = asyncHandler(async (req, res) => {
-  const stages = await PipelineStage.find().sort({ stageOrder: 1 });
+const getPipelineStagesById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const stages = await PipelineStage.find({ pipeline: id })
+    .populate("leads")
+    .populate("pipeline");
+
+  // console.log("Pipeline Id: ", id);
+  // console.log("Pipeline Stages: ", stages);
 
   return res
     .status(200)
@@ -41,28 +48,13 @@ const getAllPipelineStages = asyncHandler(async (req, res) => {
     );
 });
 
-const getPipelineStagesById = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-
-  const stages = await Pipeline.findById(id);
-
-  console.log("StageId", id);
-  if (!stages) {
-    throw new ApiError(404, "Pipeline stage not found.");
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, stages, "Pipeline stage fetched successfully."));
-});
-
 const updatePipelineStage = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { stageName, stageOrder, color, pipelineId } = req.body;
+  const { stageName, pipelineId } = req.body;
 
   const updatedStage = await PipelineStage.findByIdAndUpdate(
     id,
-    { $set: { stageName, stageOrder, color, pipelineId } },
+    { $set: { stageName, pipelineId } },
     { new: true }
   );
 
@@ -75,28 +67,6 @@ const updatePipelineStage = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, updatedStage, "Pipeline stage updated successfully.")
     );
-});
-
-const updatePipelineStageOrder = asyncHandler(async (req, res) => {
-  const { stages } = req.body; // Array of stages with updated orders
-
-  if (!stages || !Array.isArray(stages)) {
-    throw new ApiError(400, "Invalid stages array.");
-  }
-
-  const bulkOps = stages.map((stage) => ({
-    updateOne: {
-      filter: { _id: stage._id },
-      update: { stageOrder: stage.stageOrder },
-    },
-  }));
-
-  // Execute all update operations in bulk
-  await PipelineStage.bulkWrite(bulkOps);
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Pipeline stages reordered successfully."));
 });
 
 const deletePipelineStage = asyncHandler(async (req, res) => {
@@ -160,7 +130,6 @@ const addLeadToPipelineStage = asyncHandler(async (req, res) => {
   if (!updatedPipelineStage) {
     throw new ApiError(500, "Error while adding lead to the pipeline stage.");
   }
-  console.log();
   return res
     .status(200)
     .json(
@@ -176,16 +145,13 @@ const removeLeadFromStage = async (req, res) => {
   const { pipelineStageId, leadId } = req.body;
 
   try {
-    // Find the stage by ID
     const stage = await PipelineStage.findById(pipelineStageId);
     if (!stage) {
       return res.status(404).json({ error: "Pipeline stage not found" });
     }
 
-    // Remove the lead from the leads array
     stage.leads = stage.leads.filter((lead) => lead.toString() !== leadId);
 
-    // Save the updated stage
     await stage.save();
 
     return res
@@ -218,8 +184,7 @@ const deleteLeadCompletely = async (req, res) => {
 };
 
 const moveLead = asyncHandler(async (req, res) => {
-  const { leadId, sourceStageId, destinationStageId, destinationIndex } =
-    req.body;
+  const { leadId, sourceStageId, destinationStageId } = req.body;
 
   if (!leadId || !sourceStageId || !destinationStageId) {
     throw new ApiError(
@@ -271,7 +236,6 @@ const moveLead = asyncHandler(async (req, res) => {
       )
     );
   } catch (error) {
-    // If an error occurred, abort the transaction
     await session.abortTransaction();
     session.endSession();
     throw error;
@@ -280,13 +244,11 @@ const moveLead = asyncHandler(async (req, res) => {
 
 export {
   createPipelineStage,
-  getAllPipelineStages,
   getPipelineStagesById,
   updatePipelineStage,
   deletePipelineStage,
   addLeadToPipelineStage,
   removeLeadFromStage,
   deleteLeadCompletely,
-  updatePipelineStageOrder,
   moveLead,
 };

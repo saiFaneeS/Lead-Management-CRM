@@ -5,10 +5,6 @@ const pipelineStageSchema = new Schema({
     type: String,
     required: true,
   },
-  stageOrder: {
-    type: Number,
-    required: true,
-  },
   leads: [
     {
       type: Schema.Types.ObjectId,

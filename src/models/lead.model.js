@@ -18,6 +18,7 @@ const leadSchema = new Schema(
     },
     email: {
       type: String,
+      required: true,
     },
     phone: {
       type: String,

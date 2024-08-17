@@ -6,6 +6,7 @@ import {
   notifyLeadAssigned,
   notifyLeadStatusChanged,
 } from "../utils/notifications/leadNotifications.js";
+import { User } from "../models/user.model.js";
 
 const registerLead = asyncHandler(async (req, res) => {
   const { name, email, phone, assignedTo } = req.body;
@@ -22,6 +23,12 @@ const registerLead = asyncHandler(async (req, res) => {
   });
 
   await notifyLeadAssigned(assignedTo, name);
+
+  if (assignedTo) {
+    const assignedToUserData = await User.findById(assignedTo);
+
+    lead.assignedTo = assignedToUserData;
+  }
 
   return res
     .status(200)
@@ -76,11 +83,15 @@ const updateLeadDetails = asyncHandler(async (req, res) => {
     { new: true }
   );
 
+  if (assignedTo) {
+    const assignedToUserData = await User.findById(assignedTo);
+
+    updatedLead.assignedTo = assignedToUserData;
+  }
+
   if (!updatedLead) {
     throw new ApiError(404, "Lead not found.");
   }
-
-  console.log(lead.status, status);
 
   if (statusChanged) {
     await notifyLeadStatusChanged(

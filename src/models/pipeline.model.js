@@ -6,16 +6,6 @@ const pipelineSchema = new Schema(
       type: String,
       required: true,
     },
-    color: {
-      type: String,
-      default: "#ddd",
-    },
-    stages: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "PipelineStage",
-      },
-    ],
   },
   {
     timestamps: true,
