@@ -1,5 +1,4 @@
 import { Lead } from "../models/lead.model.js";
-import { Pipeline } from "../models/pipeline.model.js";
 import { PipelineStage } from "../models/pipelineStage.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -193,51 +192,37 @@ const moveLead = asyncHandler(async (req, res) => {
     );
   }
 
-  // Start a session for the transaction
-  const session = await PipelineStage.startSession();
-  session.startTransaction();
-
   try {
-    // Remove the lead from the source stage
     const sourceStage = await PipelineStage.findByIdAndUpdate(
       sourceStageId,
       { $pull: { leads: leadId } },
-      { session, new: true }
+      { new: true }
     );
 
     if (!sourceStage) {
       throw new ApiError(404, "Source stage not found.");
     }
 
-    // Add the lead to the destination stage at the specified index
-    const destinationStage = await PipelineStage.findById(
-      destinationStageId
-    ).session(session);
+    const destinationStage = await PipelineStage.findByIdAndUpdate(
+      destinationStageId,
+      { $push: { leads: leadId } },
+      { new: true }
+    );
 
     if (!destinationStage) {
       throw new ApiError(404, "Destination stage not found.");
     }
 
-    destinationStage.leads.splice(destinationIndex, 0, leadId);
-    await destinationStage.save({ session });
-
-    // Commit the transaction
-    await session.commitTransaction();
-    session.endSession();
-
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          sourceStage,
-          destinationStage,
-        },
-        "Lead moved successfully."
-      )
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { sourceStage, destinationStage },
+          "Lead moved successfully."
+        )
+      );
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
     throw error;
   }
 });
