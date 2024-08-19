@@ -8,7 +8,7 @@ import { Notification } from "../models/notification.model.js";
 
 const options = {
   secure: true,
-  sameSite: "Lax",
+  sameSite: "None",
 };
 
 const generateAccessAndRefreshToken = async (userId) => {
