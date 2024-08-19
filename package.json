@@ -3,10 +3,10 @@
     "version": "1.0.0",
     "description": "",
     "type": "module",
-    "main": "api/server.js",
+    "main": "app/server.js",
     "scripts": {
-      "dev": "nodemon -r dotenv/config --experimental-json-modules api/server.js",
-      "start": "node api/server.js"
+      "dev": "nodemon -r dotenv/config --experimental-json-modules app/server.js",
+      "start": "node app/server.js"
     },
     "author": "",
     "license": "ISC",
