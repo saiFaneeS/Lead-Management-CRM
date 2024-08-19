@@ -9,6 +9,7 @@ import { Notification } from "../models/notification.model.js";
 const options = {
   httpOnly: true,
   secure: true,
+  sameSite: "none",
 };
 
 const generateAccessAndRefreshToken = async (userId) => {
