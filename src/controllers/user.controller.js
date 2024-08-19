@@ -7,7 +7,7 @@ import sendEmailNotification from "../utils/sendEmailNotification.js";
 import { Notification } from "../models/notification.model.js";
 
 const options = {
-  httpOnly: true,
+  httpOnly: false,
   secure: true,
   sameSite: "none",
 };
@@ -92,7 +92,7 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required.");
   }
 
-  console.log(req.body);
+  // console.log(req.body);
 
   const user = await User.findOne({ email });
 
