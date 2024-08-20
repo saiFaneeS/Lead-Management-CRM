@@ -7,7 +7,8 @@ import sendEmailNotification from "../utils/sendEmailNotification.js";
 import { Notification } from "../models/notification.model.js";
 
 const options = {
-  secure: false,
+  httpOnly: true,
+  secure: true,
   sameSite: "None",
 };
 
