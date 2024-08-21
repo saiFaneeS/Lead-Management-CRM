@@ -12,6 +12,7 @@ import {
   updateAccountDetails,
   updateUserAvatar,
   updateUserDetails,
+  deleteManyAgents,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import verifyJWT from "../middlewares/auth.middleware.js";
@@ -34,5 +35,6 @@ router
   .route("/update-avatar")
   .patch(upload.single("avatar"), verifyJWT, updateUserAvatar);
 router.route("/delete-user/:id").delete(verifyJWT, deleteUserById);
+router.route("/delete-many").post(verifyJWT, deleteManyAgents);
 
 export default router;

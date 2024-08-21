@@ -19,7 +19,7 @@ const registerLead = asyncHandler(async (req, res) => {
     name,
     email,
     phone,
-    assignedTo,
+    assignedTo: assignedTo && assignedTo,
   });
 
   await notifyLeadAssigned(assignedTo, name);
@@ -122,10 +122,40 @@ const deleteLeadById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Lead deleted Successfully."));
 });
 
+const deleteManyLeads = asyncHandler(async (req, res) => {
+  const { leadIds } = req.body;
+  // console.log("Delete lead ids: ", leadIds);
+
+  if (!leadIds || !Array.isArray(leadIds)) {
+    throw new ApiError(400, "leadIds must be an array of valid lead IDs.");
+  }
+
+  try {
+    const result = await Lead.deleteMany({ _id: { $in: leadIds } });
+
+    if (result.deletedCount === 0) {
+      throw new ApiError(404, "No leads found to delete.");
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          {},
+          `${result.deletedCount} leads deleted successfully.`
+        )
+      );
+  } catch (error) {
+    throw new ApiError(500, "Something went wrong while deleting leads.");
+  }
+});
+
 export {
   registerLead,
   getAllLeads,
   getLeadById,
   updateLeadDetails,
   deleteLeadById,
+  deleteManyLeads,
 };

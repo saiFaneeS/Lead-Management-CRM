@@ -7,9 +7,9 @@ import sendEmailNotification from "../utils/sendEmailNotification.js";
 import { Notification } from "../models/notification.model.js";
 
 const options = {
-  httpOnly: true,
-  secure: true,
-  sameSite: "None",
+  // httpOnly: true,
+  // secure: true,
+  // sameSite: "None",
 };
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -349,6 +349,35 @@ const deleteUserById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User deleted Successfully."));
 });
 
+const deleteManyAgents = asyncHandler(async (req, res) => {
+  const { agentIds } = req.body;
+  // console.log("Delete Agent ids: ", agentIds);
+
+  if (!agentIds || !Array.isArray(agentIds)) {
+    throw new ApiError(400, "Agent Ids must be an array of valid agent IDs.");
+  }
+
+  try {
+    const result = await User.deleteMany({ _id: { $in: agentIds } });
+
+    if (result.deletedCount === 0) {
+      throw new ApiError(404, "No agents found to delete.");
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          {},
+          `${result.deletedCount} agents deleted successfully.`
+        )
+      );
+  } catch (error) {
+    throw new ApiError(500, "Something went wrong while deleting agents.");
+  }
+});
+
 export {
   registerUser,
   loginUser,
@@ -361,5 +390,6 @@ export {
   updateAccountDetails,
   updateUserAvatar,
   deleteUserById,
+  deleteManyAgents,
   updateUserDetails,
 };

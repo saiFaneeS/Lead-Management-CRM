@@ -4,7 +4,11 @@ import cors from "cors";
 
 const app = express();
 
-const allowedOrigins = ["http://localhost:3000", "https://localhost:3000"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://localhost:3000",
+  "https://ms-crm.vercel.app/",
+];
 
 app.use(
   cors({
