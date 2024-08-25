@@ -7,9 +7,9 @@ import sendEmailNotification from "../utils/sendEmailNotification.js";
 import { Notification } from "../models/notification.model.js";
 
 const options = {
-  // httpOnly: true,
-  // secure: true,
-  // sameSite: "None",
+  httpOnly: true,
+  secure: true,
+  sameSite: "None",
 };
 
 const generateAccessAndRefreshToken = async (userId) => {
