@@ -8,7 +8,6 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://localhost:3000",
   "https://ms-crm.vercel.app",
-  
 ];
 
 app.use(

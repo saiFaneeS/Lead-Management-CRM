@@ -15,21 +15,21 @@ const getLeadsPerTimePeriod = asyncHandler(async (req, res) => {
       },
     ]);
 
-    const leadsPerDay = await Lead.aggregate([
-      {
-        $group: {
-          _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" },
-            day: { $dayOfMonth: "$createdAt" },
-          },
-          // totalLeads: { $sum: 1 },
-        },
-      },
-      {
-        $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 },
-      },
-    ]);
+    // const leadsPerDay = await Lead.aggregate([
+    //   {
+    //     $group: {
+    //       _id: {
+    //         year: { $year: "$createdAt" },
+    //         month: { $month: "$createdAt" },
+    //         day: { $dayOfMonth: "$createdAt" },
+    //       },
+    //       // totalLeads: { $sum: 1 },
+    //     },
+    //   },
+    //   {
+    //     $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 },
+    //   },
+    // ]);
 
     const leadsPerMonth = await Lead.aggregate([
       {
@@ -89,17 +89,17 @@ const getLeadsPerTimePeriod = asyncHandler(async (req, res) => {
       },
     ]);
 
-    const leadsPerYear = await Lead.aggregate([
-      {
-        $group: {
-          _id: { $year: "$createdAt" },
-          // totalLeads: { $sum: 1 },
-        },
-      },
-      {
-        $sort: { _id: 1 },
-      },
-    ]);
+    // const leadsPerYear = await Lead.aggregate([
+    //   {
+    //     $group: {
+    //       _id: { $year: "$createdAt" },
+    //       // totalLeads: { $sum: 1 },
+    //     },
+    //   },
+    //   {
+    //     $sort: { _id: 1 },
+    //   },
+    // ]);
 
     res.status(200).json(
       new ApiResponse(

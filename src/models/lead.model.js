@@ -25,7 +25,7 @@ const leadSchema = new Schema(
     },
     status: {
       type: String,
-      default: "new",
+      default: "New",
       enum: leadStatuses,
     },
     assignedTo: {

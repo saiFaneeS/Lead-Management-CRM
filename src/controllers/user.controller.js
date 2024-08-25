@@ -374,7 +374,7 @@ const deleteManyAgents = asyncHandler(async (req, res) => {
         )
       );
   } catch (error) {
-    throw new ApiError(500, "Something went wrong while deleting leads.");
+    throw new ApiError(500, "Something went wrong while deleting agents.");
   }
 });
 
