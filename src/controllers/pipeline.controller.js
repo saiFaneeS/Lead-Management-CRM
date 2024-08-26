@@ -30,44 +30,7 @@ const createPipeline = asyncHandler(async (req, res) => {
 });
 
 const getAllPipelines = asyncHandler(async (req, res) => {
-  // const pipelines = await Pipeline.aggregate([
-  //   {
-  //     $lookup: {
-  //       from: "pipelinestages",
-  //       localField: "_id",
-  //       foreignField: "pipeline",
-  //       as: "stages",
-  //     },
-  //   },
-  //   {
-  //     $unwind: {
-  //       path: "$stages",
-  //       preserveNullAndEmptyArrays: true,
-  //     },
-  //   },
-  //   {
-  //     $lookup: {
-  //       from: "leads",
-  //       localField: "stages.leads",
-  //       foreignField: "_id",
-  //       as: "stages.leads",
-  //     },
-  //   },
-  //   {
-  //     $group: {
-  //       _id: "$_id",
-  //       pipelineName: { $first: "$pipelineName" },
-  //       color: { $first: "$color" },
-  //       stages: { $push: "$stages" },
-  //       createdAt: { $first: "$createdAt" },
-  //       updatedAt: { $first: "$updatedAt" },
-  //     },
-  //   },
-  // ]);
-
-  // console.log(JSON.stringify(pipelines, null, 2));
-
-  const pipelines = await Pipeline.find();
+   const pipelines = await Pipeline.find();
   // console.log(pipelines);
 
   return res

@@ -30,6 +30,8 @@ import noteRouter from "./routes/note.routes.js";
 import taskRouter from "./routes/task.routes.js";
 import notificationRouter from "./routes/notification.routes.js";
 import reportsRouter from "./routes/report.routes.js";
+import chatsRouter from "./routes/messages/chat.routes.js";
+import messagesRouter from "./routes/messages/message.routes.js";
 
 // routes
 app.use("/api/v1/users", userRouter);
@@ -40,6 +42,8 @@ app.use("/api/v1/notes", noteRouter);
 app.use("/api/v1/tasks", taskRouter);
 app.use("/api/v1/notifications", notificationRouter);
 app.use("/api/v1/reports", reportsRouter);
+app.use("/api/v1/chats", chatsRouter);
+app.use("/api/v1/messages", messagesRouter);
 
 app.get("/", (req, res) => res.send("API - LMS"));
 
