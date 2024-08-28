@@ -78,9 +78,14 @@ const getUsersCount = asyncHandler(async (req, res) => {
   try {
     const totalUsers = await User.aggregate([
       {
+        $match: {
+          role: { $ne: "Guest" }, 
+        },
+      },
+      {
         $group: {
           _id: null,
-          totalUsers: { $sum: 1 },
+          totalUsers: { $sum: 1 }, 
         },
       },
     ]);

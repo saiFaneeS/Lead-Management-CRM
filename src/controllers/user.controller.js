@@ -4,7 +4,6 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import sendEmailNotification from "../utils/sendEmailNotification.js";
-import { Notification } from "../models/notification.model.js";
 import { Lead } from "../models/lead.model.js";
 
 const options = {
