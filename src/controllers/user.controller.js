@@ -8,9 +8,9 @@ import { Notification } from "../models/notification.model.js";
 import { Lead } from "../models/lead.model.js";
 
 const options = {
-  // httpOnly: true,
-  // secure: true,
-  // sameSite: "None",
+  httpOnly: true,
+  secure: true,
+  sameSite: "None",
 };
 
 const generateAccessAndRefreshToken = async (userId) => {
