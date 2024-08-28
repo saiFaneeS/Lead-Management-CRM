@@ -1,5 +1,6 @@
 import { Lead } from "../models/lead.model.js";
 import { PipelineStage } from "../models/pipelineStage.model.js";
+import { User } from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -11,7 +12,7 @@ const createPipelineStage = asyncHandler(async (req, res) => {
   // console.log("New Stage data: ", stageName, req.params);
 
   if (!stageName || !id) {
-    throw new ApiError(400, "Stage name or Pipeline Id is missing.");
+    throw new ApiError(400, "Stage fullName or Pipeline Id is missing.");
   }
 
   const pipelineStage = await PipelineStage.create({
@@ -34,7 +35,13 @@ const getPipelineStagesById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const stages = await PipelineStage.find({ pipeline: id })
-    .populate("leads")
+    .populate({
+      path: "leads",
+      populate: {
+        path: "profile",
+        select: "fullName email phone avatar",
+      },
+    })
     .populate("pipeline");
 
   // console.log("Pipeline Id: ", id);
@@ -83,12 +90,12 @@ const deletePipelineStage = asyncHandler(async (req, res) => {
 });
 
 const addLeadToPipelineStage = asyncHandler(async (req, res) => {
-  const { leadId, name, email, phone, pipelineStageId } = req.body;
+  const { leadId, fullName, email, phone, pipelineStageId } = req.body;
 
   if (!leadId && !email) {
     throw new ApiError(
       400,
-      "Either lead ID or lead data (name, email, phone) is required."
+      "Either lead ID or lead data (fullName, email, phone) is required."
     );
   }
 
@@ -98,9 +105,21 @@ const addLeadToPipelineStage = asyncHandler(async (req, res) => {
 
   let lead;
 
-  // Option 1: Create a new lead and add it to the pipeline stage
+  // Create a new lead and add it to the pipeline stage
   if (!leadId && email) {
-    lead = await Lead.create({ name, email, phone });
+    const leadUser = await User.create({
+      fullName,
+      email,
+      phone,
+      password: email,
+    });
+
+    const newLead = await Lead.create({ profile: leadUser._id });
+
+    lead = await Lead.findById(newLead._id).populate(
+      "profile",
+      "name email phone avatar"
+    );
 
     if (!lead) {
       throw new ApiError(
@@ -110,9 +129,12 @@ const addLeadToPipelineStage = asyncHandler(async (req, res) => {
     }
   }
 
-  // Option 2: Use an existing lead
+  //  Use an existing lead
   if (leadId) {
-    lead = await Lead.findById(leadId);
+    lead = await Lead.findById(leadId).populate(
+      "profile",
+      "fullName email phone avatar"
+    );
 
     if (!lead) {
       throw new ApiError(404, "Lead not found.");
@@ -122,8 +144,8 @@ const addLeadToPipelineStage = asyncHandler(async (req, res) => {
   // Add the lead's ID to the pipeline stage's leads array
   const updatedPipelineStage = await PipelineStage.findByIdAndUpdate(
     pipelineStageId,
-    { $addToSet: { leads: lead._id } }, // Ensure the lead isn't added multiple times
-    { new: true } // Return the updated document
+    { $addToSet: { leads: lead._id } },
+    { new: true }
   );
 
   if (!updatedPipelineStage) {

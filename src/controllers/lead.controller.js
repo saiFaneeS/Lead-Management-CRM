@@ -9,34 +9,72 @@ import {
 import { User } from "../models/user.model.js";
 
 const registerLead = asyncHandler(async (req, res) => {
-  const { name, email, phone, assignedTo } = req.body;
+  const { fullName, email, phone, password, assignedTo } = req.body;
 
-  if (!email && !phone) {
-    throw new ApiError(400, "Either email or phone is required.");
+  if (!fullName || !email) {
+    throw new ApiError(400, "Email and name are required.");
   }
 
-  const lead = await Lead.create({
-    name,
+  const userExists = await User.findOne({ email });
+
+  if (userExists) {
+    throw new ApiError(400, "User already exists.");
+  }
+
+  const user = await User.create({
+    fullName,
     email,
     phone,
+    password: password || email,
+    avatar: "",
+  });
+
+  const createdUser = await User.findById(user?._id).select(
+    "-password -refreshToken"
+  );
+
+  if (!createdUser) {
+    throw new ApiError(
+      500,
+      "Something went wrong while registering lead user."
+    );
+  }
+
+  const createdLead = await Lead.create({
+    profile: user._id,
     assignedTo: assignedTo && assignedTo,
   });
 
-  await notifyLeadAssigned(assignedTo, name);
+  // await notifyLeadAssigned(assignedTo, fullName);
 
   if (assignedTo) {
     const assignedToUserData = await User.findById(assignedTo);
 
-    lead.assignedTo = assignedToUserData;
+    createdLead.assignedTo = assignedToUserData;
   }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, lead, "Lead registered Successfully."));
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        lead: {
+          fullName: user.fullName,
+          email: user.email,
+          phone: user.phone,
+          password: user.password,
+          assignedTo: createdLead.assignedTo,
+        },
+      },
+      "Lead registered Successfully."
+    )
+  );
 });
 
 const getAllLeads = asyncHandler(async (req, res) => {
-  const leads = await Lead.find().populate("assignedTo");
+  const leads = await Lead.find()
+    .populate("profile", "fullName email phone avatar role")
+    .populate("assignedTo")
+    .select("-password");
 
   return res
     .status(200)
@@ -46,7 +84,9 @@ const getAllLeads = asyncHandler(async (req, res) => {
 const getLeadById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const lead = await Lead.findById(id);
+  const lead = await Lead.findById(id)
+    .populate("profile")
+    .populate("assignedTo");
 
   if (!lead) {
     throw new ApiError(404, "Lead not found.");
@@ -93,13 +133,13 @@ const updateLeadDetails = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Lead not found.");
   }
 
-  if (statusChanged) {
-    await notifyLeadStatusChanged(
-      updatedLead.assignedTo,
-      updatedLead.name,
-      updatedLead.status
-    );
-  }
+  // if (statusChanged) {
+  //   await notifyLeadStatusChanged(
+  //     updatedLead.assignedTo,
+  //     updatedLead.name,
+  //     updatedLead.status
+  //   );
+  // }
 
   return res
     .status(200)
@@ -110,6 +150,10 @@ const updateLeadDetails = asyncHandler(async (req, res) => {
 
 const deleteLeadById = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  const lead = await Lead.findById(id);
+
+  await User.findByIdAndDelete(lead.user);
 
   const deletedLead = await Lead.findByIdAndDelete(id);
 

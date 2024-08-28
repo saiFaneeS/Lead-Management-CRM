@@ -34,9 +34,9 @@ const configureSocket = (server) => {
       }
     });
 
-    socket.on("chat message", (roomId, content, user) => {
+    socket.on("chat message", (roomId, content, user, chatId, createdAt) => {
       if (roomId && content && user) {
-        io.to(roomId).emit("chat message", content, user);
+        io.to(roomId).emit("chat message", content, user, chatId, createdAt);
       } else {
         console.error("Invalid roomId or message");
       }

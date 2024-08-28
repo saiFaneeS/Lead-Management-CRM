@@ -5,11 +5,12 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import sendEmailNotification from "../utils/sendEmailNotification.js";
 import { Notification } from "../models/notification.model.js";
+import { Lead } from "../models/lead.model.js";
 
 const options = {
-  httpOnly: true,
-  secure: true,
-  sameSite: "None",
+  // httpOnly: true,
+  // secure: true,
+  // sameSite: "None",
 };
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -65,19 +66,11 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   if (createdUser) {
-    // send notification
     await sendEmailNotification(
       createdUser._id,
       "Agent Registration",
       `You have been registered as an Agent in Modern Standards CRM as ${fullName}`
     );
-
-    // in-app notification
-    await Notification.create({
-      user: createdUser._id,
-      message: `Hi ${fullName}, Welcome to Modern Standards team CRM!`,
-      type: "other",
-    });
   }
 
   return res
@@ -95,8 +88,9 @@ const loginUser = asyncHandler(async (req, res) => {
   // console.log(req.body);
 
   const user = await User.findOne({ email });
+  const leadUser = await Lead.findOne({ email });
 
-  if (!user) {
+  if (!user && !leadUser) {
     throw new ApiError(404, "User does not exist.");
   }
 
@@ -107,12 +101,12 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-    user._id
+    user ? user._id : leadUser._id
   );
 
-  const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
+  const loggedInUser = await User.findById(
+    user ? user._id : leadUser._id
+  ).select("-password -refreshToken");
 
   return res
     .status(200)

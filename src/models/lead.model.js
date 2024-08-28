@@ -12,16 +12,9 @@ const leadStatuses = [
 
 const leadSchema = new Schema(
   {
-    name: {
-      type: String,
-      required: true,
-    },
-    email: {
-      type: String,
-      required: true,
-    },
-    phone: {
-      type: String,
+    profile: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
     status: {
       type: String,

@@ -56,9 +56,16 @@ const registerNewChat = asyncHandler(async (req, res) => {
     lastMessage: lastMsgId,
   });
 
+  const populatedChat = await Chat.findById(chat._id)
+    .populate("agent")
+    .populate("guest")
+    .populate("lastMessage");
+
   return res
     .status(200)
-    .json(new ApiResponse(200, chat, "New chat registered Successfully."));
+    .json(
+      new ApiResponse(200, populatedChat, "New chat registered Successfully.")
+    );
 });
 
 const deleteChatMessage = asyncHandler(async (req, res) => {
@@ -93,9 +100,28 @@ const setLastMessage = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .json(new ApiResponse(200, {}, "Message deleted successfully."));
+      .json(new ApiResponse(200, {}, "Last Message set successfully."));
   } catch (error) {
     throw new ApiError(500, "Could'nt update last message.");
+  }
+});
+
+const deleteChat = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return;
+  }
+
+  try {
+    await Message.deleteMany({ chat: { $in: id } });
+    await Chat.findByIdAndDelete(id);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, `Chat deleted successfully.`));
+  } catch (error) {
+    throw new ApiError(500, "Could'nt delete chat.");
   }
 });
 
@@ -105,4 +131,5 @@ export {
   getChatById,
   deleteChatMessage,
   setLastMessage,
+  deleteChat,
 };

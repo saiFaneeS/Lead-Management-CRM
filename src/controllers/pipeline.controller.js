@@ -30,7 +30,7 @@ const createPipeline = asyncHandler(async (req, res) => {
 });
 
 const getAllPipelines = asyncHandler(async (req, res) => {
-   const pipelines = await Pipeline.find();
+  const pipelines = await Pipeline.find();
   // console.log(pipelines);
 
   return res

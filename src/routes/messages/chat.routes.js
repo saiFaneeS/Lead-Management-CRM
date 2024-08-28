@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  deleteChat,
   deleteChatMessage,
   getAllChats,
   getChatById,
@@ -14,5 +15,6 @@ router.route("/chat/:id").get(getChatById);
 router.route("/register").post(registerNewChat);
 router.route("/chat/:id").delete(deleteChatMessage);
 router.route("/update-last-message/:id").patch(setLastMessage);
+router.route("/delete-chat/:id").delete(deleteChat);
 
 export default router;
