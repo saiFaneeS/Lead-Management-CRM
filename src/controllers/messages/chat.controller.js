@@ -6,7 +6,7 @@ import asyncHandler from "../../utils/asyncHandler.js";
 
 const getAllChats = asyncHandler(async (req, res) => {
   const { id } = req.params;
-
+  // console.log(id);
   const chats = await Chat.find({ $or: [{ guest: id }, { agent: id }] })
     .populate("agent")
     .populate("guest")
@@ -19,7 +19,7 @@ const getAllChats = asyncHandler(async (req, res) => {
 
 const getChatById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  console.log(id);
+  // console.log(id);
 
   if (!id) {
     throw new ApiError(400, "Please provide a chat id.");
@@ -28,7 +28,7 @@ const getChatById = asyncHandler(async (req, res) => {
   const chat = await Chat.findById(id).populate("agent").populate("guest");
 
   const messages = await Message.find({ chat: id }).populate("sender");
-
+  // console.log(chat);
   return res.status(200).json(
     new ApiResponse(
       200,
@@ -85,7 +85,7 @@ const deleteChatMessage = asyncHandler(async (req, res) => {
 const setLastMessage = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { lastMessageId } = req.body;
-  console.log("Chat & Last Message IDs: ", id, lastMessageId);
+  // console.log("Chat & Last Message IDs: ", id, lastMessageId);
 
   if (!id) {
     throw new ApiError(400, "Please provide chat id.");
@@ -125,6 +125,44 @@ const deleteChat = asyncHandler(async (req, res) => {
   }
 });
 
+const markMessageRead = asyncHandler(async (req, res) => {
+  const { chatId } = req.params;
+  const userId = req.user._id;
+
+  // console.log("chat id: ", chatId)
+  // console.log("user id: ", userId)
+
+  // Fetch all messages in the chat
+  const messages = await Message.find({ chat: chatId });
+  // // Filter messages that haven't been read by the current user
+  const unreadMessages = messages.filter(
+    (message) => !message.readBy.includes(userId)
+  );
+
+  // // Mark unread messages as read by adding the userId to their readBy array
+  const updatedMessages = await Promise.all(
+    unreadMessages.map(async (message) => {
+      message.readBy.push(userId);
+      return message.save();
+    })
+  );
+
+  // console.log("updatedMessages: ", updatedMessages);
+
+  // Return the updated messages and the count of unread messages
+  res.json({
+    messages: updatedMessages, // You might want to return all messages if you want to show read and unread ones
+    unreadCount: unreadMessages.length,
+  });
+});
+
+// const markMessageRead = asyncHandler(async (req, res) => {
+//   const { chatId } = req.params;
+//   console.log("chat id: ", chatId);
+//   const userId = req.user._id;
+//   console.log("user id: ", userId);
+// });
+
 export {
   registerNewChat,
   getAllChats,
@@ -132,4 +170,5 @@ export {
   deleteChatMessage,
   setLastMessage,
   deleteChat,
+  markMessageRead,
 };

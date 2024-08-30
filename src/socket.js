@@ -15,7 +15,7 @@ const configureSocket = (server) => {
 
   io.on("connection", (socket) => {
     socket.on("join room", (roomId, user) => {
-      console.log(roomId, user);
+      // console.log(roomId, user);
       if (roomId && user) {
         socket.join(roomId);
         io.to(roomId).emit("user joined", `${user} is online`);
@@ -25,7 +25,7 @@ const configureSocket = (server) => {
     });
 
     socket.on("leave room", (roomId, user) => {
-      console.log(roomId, user);
+      // console.log(roomId, user);
       if (roomId && user) {
         socket.leave(roomId);
         io.to(roomId).emit("user left", `${user} is offline`);
@@ -34,13 +34,24 @@ const configureSocket = (server) => {
       }
     });
 
-    socket.on("chat message", (roomId, content, user, chatId, createdAt) => {
-      if (roomId && content && user) {
-        io.to(roomId).emit("chat message", content, user, chatId, createdAt);
-      } else {
-        console.error("Invalid roomId or message");
+    socket.on(
+      "chat message",
+      (roomId, content, sender, reciever, chatId, createdAt) => {
+        // console.log("socket: ", sender, reciever);
+        if (roomId && content && sender) {
+          io.to(roomId).emit(
+            "chat message",
+            content,
+            sender,
+            reciever,
+            chatId,
+            createdAt
+          );
+        } else {
+          console.error("Invalid roomId or message");
+        }
       }
-    });
+    );
   });
 
   return io;

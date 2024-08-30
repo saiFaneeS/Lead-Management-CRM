@@ -7,6 +7,10 @@ const messageSchema = new Schema(
       ref: "User",
       required: true,
     },
+    reciever: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
     content: {
       type: String,
       required: true,
@@ -15,6 +19,12 @@ const messageSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Chat",
     },
+    readBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: true }
 );
