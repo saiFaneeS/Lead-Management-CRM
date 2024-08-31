@@ -2,26 +2,21 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { Lead } from "../models/lead.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
-import {
-  notifyLeadAssigned,
-  notifyLeadStatusChanged,
-} from "../utils/notifications/leadNotifications.js";
 import { User } from "../models/user.model.js";
 
 const registerLead = asyncHandler(async (req, res) => {
-  const { fullName, email, phone, password, assignedTo } = req.body;
+  const { fullName, email, phone, password, assignedTo, status } = req.body;
 
   if (!fullName || !email) {
     throw new ApiError(400, "Email and name are required.");
   }
 
   const userExists = await User.findOne({ email });
-
   if (userExists) {
-    throw new ApiError(400, "User already exists.");
+    throw new ApiError(400, "User with this email already exists.");
   }
 
-  const user = await User.create({
+  const user = new User({
     fullName,
     email,
     phone,
@@ -29,45 +24,50 @@ const registerLead = asyncHandler(async (req, res) => {
     avatar: "",
   });
 
-  const createdUser = await User.findById(user?._id).select(
-    "-password -refreshToken"
-  );
+  const session = await User.startSession();
+  session.startTransaction();
 
-  if (!createdUser) {
-    throw new ApiError(
-      500,
-      "Something went wrong while registering lead user."
-    );
-  }
+  try {
+    await user.save({ session });
 
-  const createdLead = await Lead.create({
-    profile: user._id,
-    assignedTo: assignedTo && assignedTo,
-  });
+    const lead = new Lead({
+      profile: user._id,
+      assignedTo: assignedTo,
+      status: status || "New",
+    });
 
-  // await notifyLeadAssigned(assignedTo, fullName);
+    await lead.save({ session });
 
-  if (assignedTo) {
-    const assignedToUserData = await User.findById(assignedTo);
+    await session.commitTransaction();
+    session.endSession();
 
-    createdLead.assignedTo = assignedToUserData;
-  }
-
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        lead: {
-          fullName: user.fullName,
-          email: user.email,
-          phone: user.phone,
-          password: user.password,
-          assignedTo: createdLead.assignedTo,
-        },
+    const responseData = {
+      lead: {
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+        assignedTo: lead.assignedTo,
+        status: lead.status,
+        _id: lead._id,
+        userId: user._id,
       },
-      "Lead registered Successfully."
-    )
-  );
+    };
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, responseData, "Lead registered successfully.")
+      );
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+
+    if (user._id) {
+      await User.findByIdAndDelete(user._id);
+    }
+
+    throw new ApiError(500, "An error occurred while registering the lead.");
+  }
 });
 
 const getAllLeads = asyncHandler(async (req, res) => {
@@ -99,8 +99,8 @@ const getLeadById = asyncHandler(async (req, res) => {
 
 const updateLeadDetails = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { name, email, phone, status, assignedTo } = req.body;
-
+  const { fullName, email, phone, status, assignedTo, userId } = req.body;
+  console.log(fullName, email, phone, status, assignedTo, userId);
   const lead = await Lead.findById(id);
 
   if (!lead) {
@@ -113,11 +113,20 @@ const updateLeadDetails = asyncHandler(async (req, res) => {
     id,
     {
       $set: {
-        name,
-        email,
-        phone,
         status,
         assignedTo,
+      },
+    },
+    { new: true }
+  );
+
+  const updatedProfile = await User.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        fullName,
+        email,
+        phone,
       },
     },
     { new: true }
@@ -153,7 +162,7 @@ const deleteLeadById = asyncHandler(async (req, res) => {
 
   const lead = await Lead.findById(id);
 
-  await User.findByIdAndDelete(lead.user);
+  const deletedUser = await User.findByIdAndDelete(lead.profile);
 
   const deletedLead = await Lead.findByIdAndDelete(id);
 
@@ -168,18 +177,63 @@ const deleteLeadById = asyncHandler(async (req, res) => {
 
 const deleteManyLeads = asyncHandler(async (req, res) => {
   const { leadIds } = req.body;
-  // console.log("Delete lead ids: ", leadIds);
 
-  if (!leadIds || !Array.isArray(leadIds)) {
-    throw new ApiError(400, "leadIds must be an array of valid lead IDs.");
+  console.log("leadIds: ", leadIds);
+
+  if (!leadIds || !Array.isArray(leadIds) || leadIds.length === 0) {
+    throw new ApiError(
+      400,
+      "leadIds must be a non-empty array of valid lead IDs."
+    );
   }
 
-  try {
-    const result = await Lead.deleteMany({ _id: { $in: leadIds } });
+  const session = await Lead.startSession();
+  session.startTransaction();
 
-    if (result.deletedCount === 0) {
+  try {
+    const leadsToDelete = await Lead.find(
+      { _id: { $in: leadIds } },
+      "profile",
+      {
+        session,
+      }
+    );
+
+    const userIdsToDelete = [
+      ...new Set(leadsToDelete.map((lead) => lead.profile.toString())),
+    ];
+
+    // Delete leads
+    const leadDeleteResult = await Lead.deleteMany(
+      { _id: { $in: leadIds } },
+      { session }
+    );
+
+    if (leadDeleteResult.deletedCount === 0) {
       throw new ApiError(404, "No leads found to delete.");
     }
+
+    const remainingLeads = await Lead.find(
+      { profile: { $in: userIdsToDelete } },
+      null,
+      { session }
+    );
+
+    const usersToDelete = userIdsToDelete.filter(
+      (userId) =>
+        !remainingLeads.some((lead) => lead.profile.toString() === userId)
+    );
+
+    let userDeleteResult = { deletedCount: 0 };
+    if (usersToDelete.length > 0) {
+      userDeleteResult = await User.deleteMany(
+        { _id: { $in: usersToDelete } },
+        { session }
+      );
+    }
+
+    await session.commitTransaction();
+    session.endSession();
 
     return res
       .status(200)
@@ -187,10 +241,13 @@ const deleteManyLeads = asyncHandler(async (req, res) => {
         new ApiResponse(
           200,
           {},
-          `${result.deletedCount} leads deleted successfully.`
+          `${leadDeleteResult.deletedCount} leads and ${userDeleteResult.deletedCount} associated users deleted successfully.`
         )
       );
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error deleting leads and users:", error);
     throw new ApiError(500, "Something went wrong while deleting leads.");
   }
 });
