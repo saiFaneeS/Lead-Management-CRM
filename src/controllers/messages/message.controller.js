@@ -1,11 +1,13 @@
-import { Chat } from "../../models/messages/chat.model.js";
 import { Message } from "../../models/messages/message.model.js";
+import { Chat } from "../../models/messages/chat.model.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
+import { notifyFirstMessage } from "../../utils/notifications/messageNotification.js";
+import { User } from "../../models/user.model.js";
 
 const createNewMessage = asyncHandler(async (req, res) => {
-  const { sender, content, chat } = req.body;
+  const { sender, reciever, content, chat } = req.body;
 
   if (!sender || !content) {
     throw new ApiError(
@@ -14,11 +16,30 @@ const createNewMessage = asyncHandler(async (req, res) => {
     );
   }
 
+  console.log(sender, reciever);
+
   const message = await Message.create({
     sender,
+    reciever,
     content,
     chat,
   });
+
+  const msgChat = await Chat.findById(chat).populate("lastMessage");
+
+  const senderData = await User.findById(sender);
+  const recieverData = await User.findById(reciever);
+
+  if (!msgChat.lastMessage) {
+    // first message notification
+    await notifyFirstMessage(senderData, recieverData, content);
+  } else {
+    if (sender === req.user._id) {
+      // send new msg notification to reciever
+    } else {
+      // send new msg notification to sender
+    }
+  }
 
   return res
     .status(200)

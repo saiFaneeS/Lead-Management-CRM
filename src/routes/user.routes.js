@@ -20,13 +20,15 @@ import blockGuestUser from "../middlewares/blockGuestUsers.middleware.js";
 
 const router = Router();
 
-router.route("/register").post(upload.single("avatar"), registerUser);
+router
+  .route("/register")
+  .post(verifyJWT, upload.single("avatar"), registerUser);
 router.route("/login").post(loginUser);
 
 // secured
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/current-user").get(verifyJWT, getCurrentUser);
-router.route("/").get(verifyJWT, blockGuestUser, getAllUsers);
+router.route("/").get(verifyJWT, getAllUsers);
 router.route("/:id").get(verifyJWT, blockGuestUser, getUserById);
 router.route("/refresh-token").post(blockGuestUser, refreshAccessToken);
 router

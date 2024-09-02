@@ -32,7 +32,7 @@ const registerLead = asyncHandler(async (req, res) => {
 
     const lead = new Lead({
       profile: user._id,
-      assignedTo: assignedTo,
+      assignedTo,
       status: status || "New",
     });
 
@@ -43,9 +43,9 @@ const registerLead = asyncHandler(async (req, res) => {
 
     const responseData = {
       lead: {
-        fullName: user.fullName,
-        email: user.email,
-        phone: user.phone,
+        fullName,
+        email,
+        phone,
         assignedTo: lead.assignedTo,
         status: lead.status,
         _id: lead._id,
@@ -59,11 +59,14 @@ const registerLead = asyncHandler(async (req, res) => {
         new ApiResponse(200, responseData, "Lead registered successfully.")
       );
   } catch (error) {
+    console.error("Error during lead registration", error);
+
     await session.abortTransaction();
     session.endSession();
 
     if (user._id) {
       await User.findByIdAndDelete(user._id);
+      console.log("Step 6: Rolled back user creation");
     }
 
     throw new ApiError(500, "An error occurred while registering the lead.");

@@ -13,7 +13,13 @@ const notificationSchema = new Schema(
     },
     type: {
       type: String,
-      enum: ["new_lead", "task_assignment", "status_update", "other"],
+      enum: [
+        "new_lead",
+        "task_assignment",
+        "status_update",
+        "new_message",
+        "other",
+      ],
       required: true,
     },
     isRead: {

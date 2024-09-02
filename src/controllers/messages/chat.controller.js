@@ -156,12 +156,6 @@ const markMessageRead = asyncHandler(async (req, res) => {
   });
 });
 
-// const markMessageRead = asyncHandler(async (req, res) => {
-//   const { chatId } = req.params;
-//   console.log("chat id: ", chatId);
-//   const userId = req.user._id;
-//   console.log("user id: ", userId);
-// });
 
 export {
   registerNewChat,
