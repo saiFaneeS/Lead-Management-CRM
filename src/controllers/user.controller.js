@@ -9,7 +9,7 @@ import { Lead } from "../models/lead.model.js";
 const options = {
   httpOnly: true,
   secure: true,
-  sameSite: "None",
+  sameSite: "none",
 };
 
 const generateAccessAndRefreshToken = async (userId) => {
