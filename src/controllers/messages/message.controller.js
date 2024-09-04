@@ -3,7 +3,10 @@ import { Chat } from "../../models/messages/chat.model.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-import { notifyFirstMessage } from "../../utils/notifications/messageNotification.js";
+import {
+  notifyFirstMessage,
+  notifyNewMessage,
+} from "../../utils/notifications/messageNotification.js";
 import { User } from "../../models/user.model.js";
 
 const createNewMessage = asyncHandler(async (req, res) => {
@@ -16,8 +19,6 @@ const createNewMessage = asyncHandler(async (req, res) => {
     );
   }
 
-  console.log(sender, reciever);
-
   const message = await Message.create({
     sender,
     reciever,
@@ -27,17 +28,31 @@ const createNewMessage = asyncHandler(async (req, res) => {
 
   const msgChat = await Chat.findById(chat).populate("lastMessage");
 
+  await Chat.findByIdAndUpdate(chat, {
+    $set: {
+      lastMessage: message._id,
+    },
+  });
+  // console.log("Chat: ", msgChat);
+
   const senderData = await User.findById(sender);
   const recieverData = await User.findById(reciever);
 
   if (!msgChat.lastMessage) {
-    // first message notification
+    // console.log("first message!");
     await notifyFirstMessage(senderData, recieverData, content);
   } else {
-    if (sender === req.user._id) {
-      // send new msg notification to reciever
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+    if (msgChat.lastMessage.createdAt < thirtyMinutesAgo) {
+      // console.log(
+      //   "last message was more than 30 minutes ago"
+      // );
+      await notifyNewMessage(senderData, recieverData, content);
     } else {
-      // send new msg notification to sender
+      // console.log(
+      //   "last message was sent within the last 30 minutes"
+      // );
     }
   }
 

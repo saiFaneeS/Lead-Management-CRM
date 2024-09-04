@@ -7,9 +7,9 @@ import sendEmailNotification from "../utils/sendEmailNotification.js";
 import { Lead } from "../models/lead.model.js";
 
 const options = {
-  httpOnly: true,
-  secure: true,
-  sameSite: "none",
+  // httpOnly: true,
+  // secure: true,
+  // sameSite: "none",
 };
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -119,7 +119,7 @@ const loginUser = asyncHandler(async (req, res) => {
       )
     );
 });
-
+ 
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,

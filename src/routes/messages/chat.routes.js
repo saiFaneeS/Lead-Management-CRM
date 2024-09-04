@@ -6,7 +6,6 @@ import {
   getChatById,
   markMessageRead,
   registerNewChat,
-  setLastMessage,
 } from "../../controllers/messages/chat.controller.js";
 import verifyJWT from "../../middlewares/auth.middleware.js";
 
@@ -16,7 +15,6 @@ router.route("/:id").get(getAllChats);
 router.route("/chat/:id").get(getChatById);
 router.route("/register").post(registerNewChat);
 router.route("/chat/:id").delete(deleteChatMessage);
-router.route("/update-last-message/:id").patch(setLastMessage);
 router.route("/delete-chat/:id").delete(deleteChat);
 router.route("/mark-read/:chatId").post(verifyJWT, markMessageRead);
 

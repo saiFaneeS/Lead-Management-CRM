@@ -19,7 +19,6 @@ const getAllChats = asyncHandler(async (req, res) => {
 
 const getChatById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  // console.log(id);
 
   if (!id) {
     throw new ApiError(400, "Please provide a chat id.");
@@ -82,30 +81,6 @@ const deleteChatMessage = asyncHandler(async (req, res) => {
   }
 });
 
-const setLastMessage = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { lastMessageId } = req.body;
-  // console.log("Chat & Last Message IDs: ", id, lastMessageId);
-
-  if (!id) {
-    throw new ApiError(400, "Please provide chat id.");
-  }
-
-  try {
-    await Chat.findByIdAndUpdate(id, {
-      $set: {
-        lastMessage: lastMessageId,
-      },
-    });
-
-    return res
-      .status(200)
-      .json(new ApiResponse(200, {}, "Last Message set successfully."));
-  } catch (error) {
-    throw new ApiError(500, "Could'nt update last message.");
-  }
-});
-
 const deleteChat = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
@@ -156,13 +131,11 @@ const markMessageRead = asyncHandler(async (req, res) => {
   });
 });
 
-
 export {
   registerNewChat,
   getAllChats,
   getChatById,
   deleteChatMessage,
-  setLastMessage,
   deleteChat,
   markMessageRead,
 };
